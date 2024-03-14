@@ -54,3 +54,6 @@ nbdist/
 
 # VS Code #
 .vscode/
+
+# SonarLint #
+.sonarlint/
