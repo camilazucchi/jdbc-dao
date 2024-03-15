@@ -1,7 +1,6 @@
 package model.dao.impl;
 /* O package impl conterá implementações do DAO */
 
-import db.DB;
 import db.DbException;
 import model.dao.SellerDao;
 import model.entities.Department;
@@ -16,7 +15,7 @@ import java.util.List;
 /* Esta classe implementa a interface "SellerDao" e consequentemente todos os seus métodos */
 public class SellerDaoJDBC implements SellerDao {
 
-    private Connection conn;
+    private final Connection conn;
 
     /* Este construtor é utilizado para injetar uma instância de conexão com o banco de dados ("Connection") na classe
      * "SellerDaoJDBC". */
@@ -39,55 +38,61 @@ public class SellerDaoJDBC implements SellerDao {
     // Este método busca um vendedor (Seller) pelo seu ID no banco de dados:
     @Override
     public Seller findById(Integer id) {
-        PreparedStatement st = null;
-        ResultSet rs = null;
-        try {
-            /* Define uma String contendo a consulta SQL que seleciona todos os campos da tabela "seller" e o campo
-            * "Name" da tabela "department", renomeando-o para "DepName": */
-            String sql = "SELECT seller.*, department.Name as DepName " +
-                    "FROM seller " +
-                    "INNER JOIN department ON seller.DepartmentId = department.Id " +
-                    "WHERE seller.Id = ?";
-            // Prepara a instrução SQL para ser executada pelo banco de dados:
-            st = conn.prepareStatement(sql);
-            // Define o valor do parâmetro na posição "1" (o "?" na consulta) como o valor do "id" fornecido ao método.
-            st.setInt(1, id);
-            // Executa a consulta preparada e armazena o resultado em um objeto "ResultSet":
-            rs = st.executeQuery();
 
-            // Verifica se há pelo menos uma linha no resultado da consulta:
+        /* Modifiquei este método para utilizar try-with-resources para garantir que os recursos, como
+         * PreparedStatement e ResultSet, sejam fechados corretamente, mesmo em caso de exceção.
+         * Isso simplifica o código e elimina a necessidade de explicitamente fechar os recursos no bloco finally. */
+        try (PreparedStatement st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " + "FROM seller " + "INNER JOIN department ON seller.DepartmentId = department.Id " + "WHERE seller.Id = ?")) {
+            st.setInt(1, id);
+            return executeQueryAndProcessResult(st);
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+
+    }
+
+    // Este trecho também foi retirado do método "findById()":
+    private Seller executeQueryAndProcessResult(PreparedStatement st) {
+        try (ResultSet rs = st.executeQuery()) {
             if (rs.next()) {
-                // Cria uma nova instância de "Department":
-                Department department = new Department();
-                // Define o ID do departamento usando o valor da coluna "departmentid" no resultado da consulta:
-                department.setId(rs.getInt("departmentid"));
-                // Define o nome do departamento usando o valor da coluna "depname" no resultado da consulta:
-                department.setName(rs.getString("depname"));
-                // Cria uma nova instância de "Seller":
-                Seller obj = new Seller();
-                // Define o ID do vendedor usando o valor da coluna "id" no resultado da consulta:
-                obj.setId(rs.getInt("id"));
-                // Define o nome do vendedor usando o valor da coluna "name" no resultado da consulta:
-                obj.setName(rs.getString("name"));
-                // Define o e-mail do vendedor usando o valor da coluna "email" no resultado da consulta:
-                obj.setEmail(rs.getString("email"));
-                // Define a data de nascimento do vendedor usando o valor da coluna "birthdate" no resultado da consulta:
-                obj.setBirthDate(rs.getDate("birthdate"));
-                // Define o salário do vendedor usando o valor da coluna "basesalary" no resultado da consulta:
-                obj.setBaseSalary(rs.getDouble("basesalary"));
-                // Define o departamento do vendedor como o objeto "Department" criado anteriormente:
-                obj.setDepartment(department);
-                // Retorna o objeto "Seller" preenchido com as informações recuperadas do banco de dados:
-                return obj;
+                Department dep = instantiateDepartment(rs);
+                return instantiateSeller(rs, dep);
             }
             return null;
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
-        } finally {
-            DB.closeStatement(st);
-            DB.closeResultSet(rs);
         }
+    }
 
+    /* Separamos o trecho de código que utilizamos no método "findById()" para o método "instantiateDepartment()".
+     * Isso ajuda a melhorar a legibilidade e a modularidade do nosso código. */
+    private Department instantiateDepartment(ResultSet rs) throws SQLException {
+        Department dep = new Department();
+        // Define o ID do departamento usando o valor da coluna "departmentid" no resultado da consulta:
+        dep.setId(rs.getInt("departmentid"));
+        // Define o nome do departamento usando o valor da coluna "depname" no resultado da consulta:
+        dep.setName(rs.getString("depname"));
+        return dep;
+    }
+
+    /* Este trecho de código também foi retirado do método "findById()" e inserido no método "instantiateSeller".
+     * Isso ajuda a melhorar a legibilidade e a modularidade do nosso código. */
+    private Seller instantiateSeller(ResultSet rs, Department dep) throws SQLException {
+        Seller obj = new Seller();
+        // Define o ID do vendedor usando o valor da coluna "id" no resultado da consulta:
+        obj.setId(rs.getInt("id"));
+        // Define o nome do vendedor usando o valor da coluna "name" no resultado da consulta:
+        obj.setName(rs.getString("name"));
+        // Define o e-mail do vendedor usando o valor da coluna "email" no resultado da consulta:
+        obj.setEmail(rs.getString("email"));
+        // Define a data de nascimento do vendedor usando o valor da coluna "birthdate" no resultado da consulta:
+        obj.setBirthDate(rs.getDate("birthdate"));
+        // Define o salário do vendedor usando o valor da coluna "basesalary" no resultado da consulta:
+        obj.setBaseSalary(rs.getDouble("basesalary"));
+        // Define o departamento do vendedor como o objeto "Department" criado anteriormente:
+        obj.setDepartment(dep);
+        // Retorna o objeto "Seller" preenchido com as informações recuperadas do banco de dados:
+        return obj;
     }
 
     @Override
