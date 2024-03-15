@@ -132,9 +132,17 @@ public class SellerDaoJDBC implements SellerDao {
         return obj;
     }
 
+    // Este método retorna uma lista de todos os vendedores de todos os departamentos:
     @Override
     public List<Seller> findAll() {
-        return null;
+        try (PreparedStatement st = conn.prepareStatement("SELECT seller.*,department.Name as DepName " +
+                "FROM seller INNER JOIN department " +
+                "ON seller.DepartmentId = department.Id " +
+                "ORDER BY Name")) {
+            return executeQueryAndProcessResultMultiple(st);
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 
     // Este método retorna uma lista de vendedores de um departamento específico:
