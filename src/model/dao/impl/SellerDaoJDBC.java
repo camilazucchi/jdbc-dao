@@ -10,7 +10,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /* Esta classe implementa a interface "SellerDao" e consequentemente todos os seus métodos */
 public class SellerDaoJDBC implements SellerDao {
@@ -42,7 +45,11 @@ public class SellerDaoJDBC implements SellerDao {
         /* Modifiquei este método para utilizar try-with-resources para garantir que os recursos, como
          * PreparedStatement e ResultSet, sejam fechados corretamente, mesmo em caso de exceção.
          * Isso simplifica o código e elimina a necessidade de explicitamente fechar os recursos no bloco finally. */
-        try (PreparedStatement st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " + "FROM seller " + "INNER JOIN department ON seller.DepartmentId = department.Id " + "WHERE seller.Id = ?")) {
+        try (PreparedStatement st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
+                "FROM seller " +
+                "INNER JOIN department " +
+                "ON seller.DepartmentId = department.Id " +
+                "WHERE seller.Id = ?")) {
             st.setInt(1, id);
             return executeQueryAndProcessResult(st);
         } catch (SQLException e) {
@@ -59,6 +66,36 @@ public class SellerDaoJDBC implements SellerDao {
                 return instantiateSeller(rs, dep);
             }
             return null;
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+    }
+
+    /* Este é um método privado que recebe um objeto "PreparedStatement" como parâmetro e retorna uma lista de
+    * vendedores: */
+    private List<Seller> executeQueryAndProcessResultMultiple(PreparedStatement st) {
+        try (ResultSet rs = st.executeQuery()) {
+            // Cria uma lista vazia de vendedores:
+            List<Seller> sellers = new ArrayList<>();
+            /* Cria um map vazio que será usado para armazenar departamentos. O mapa associa IDs de departamento
+            (inteiro) a objetos de departamento: */
+            Map<Integer, Department> map = new HashMap<>();
+
+            /* Inicia um loop enquanto houver linhas disponíveis no "ResultSet". Isso percorre cada linha retornada
+            pela consulta: */
+            while (rs.next()) {
+                String departmentId = "departmentid";
+                Department dep = map.get(rs.getInt(departmentId));
+                // Caso o departamento não exista, ele será salvo no map:
+                if (dep == null) {
+                    dep = instantiateDepartment(rs);
+                    map.put(rs.getInt(departmentId), dep);
+                }
+
+                sellers.add(instantiateSeller(rs, dep));
+            }
+
+            return sellers;
         } catch (SQLException e) {
             throw new DbException(e.getMessage());
         }
@@ -98,6 +135,22 @@ public class SellerDaoJDBC implements SellerDao {
     @Override
     public List<Seller> findAll() {
         return null;
+    }
+
+    // Este método retorna uma lista de vendedores de um departamento específico:
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+        try (PreparedStatement st = conn.prepareStatement("SELECT seller.*, department.Name as DepName " +
+                "FROM seller " +
+                "INNER JOIN department " +
+                "ON seller.DepartmentId = department.Id " +
+                "WHERE DepartmentId = ? " +
+                "ORDER BY Name")) {
+            st.setInt(1, department.getId());
+            return executeQueryAndProcessResultMultiple(st);
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 
 }
