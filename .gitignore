@@ -57,3 +57,4 @@ nbdist/
 
 # SonarLint #
 .sonarlint/
+sonar-project.properties
