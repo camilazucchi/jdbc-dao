@@ -55,6 +55,10 @@ nbdist/
 # VS Code #
 .vscode/
 
-# SonarLint #
+# Arquivos SonarLint #
 .sonarlint/
 sonar-project.properties
+
+# Pastas do SonarLint #
+issuestore/
+securityhotspotstore/
