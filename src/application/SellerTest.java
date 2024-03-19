@@ -4,17 +4,16 @@ import model.DaoFactory;
 import model.dao.SellerDao;
 import model.entities.Department;
 import model.entities.Seller;
-import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
-import java.util.logging.Logger;
 
-public class Main {
+public class SellerTest {
     public static void main(String[] args) {
 
         SellerDao sellerDao = DaoFactory.createSellerDao();
+
         Scanner sc = new Scanner(System.in);
 
         System.out.println("---- TEST #1: seller findById method ----");
