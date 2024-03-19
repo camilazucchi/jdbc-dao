@@ -30,5 +30,11 @@ public class Main {
         sellers = sellerDao.findAll();
         sellers.forEach(System.out::println);
 
+        System.out.println();
+        System.out.println("---- TEST #4: seller insert method ----");
+        Seller newSeller = new Seller(null, "Greg", "greg@gmail.com", new Date(), 4000.0, dep);
+        sellerDao.insert(newSeller);
+        System.out.println("Done! New id: " + newSeller.getId());
+
     }
 }
