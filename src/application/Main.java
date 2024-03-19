@@ -36,5 +36,13 @@ public class Main {
         sellerDao.insert(newSeller);
         System.out.println("Done! New id: " + newSeller.getId());
 
+        System.out.println();
+        System.out.println("---- TEST #5: seller update method ----");
+        // Procura o vendedor com ID 1 e carrega seus dados para o objeto seller:
+        seller = sellerDao.findById(1);
+        seller.setName("Martha Wayne");
+        sellerDao.update(seller);
+        System.out.println("Updated completed!");
+
     }
 }
