@@ -5,6 +5,7 @@ import model.dao.DepartmentDao;
 import model.entities.Department;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 
 public class DepartmentDaoJDBC implements DepartmentDao {
@@ -52,7 +53,17 @@ public class DepartmentDaoJDBC implements DepartmentDao {
 
     @Override
     public void deleteById(Integer id) {
+        try (PreparedStatement st = conn.prepareStatement("DELETE FROM department " +
+                "WHERE id = ?")) {
+            st.setInt(1, id);
+            int rowsAffected = st.executeUpdate();
 
+            if (rowsAffected == 0) {
+                throw new DbException("Department with ID " + id + " not found");
+            }
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 
     @Override
@@ -78,6 +89,20 @@ public class DepartmentDaoJDBC implements DepartmentDao {
         }
     }
 
+    private List<Department> executeQueryAndProcessMultiple(PreparedStatement st) {
+        try (ResultSet rs = st.executeQuery()) {
+            List<Department> departments = new ArrayList<>();
+
+            while (rs.next()) {
+                Department obj = instantiateDepartment(rs);
+                departments.add(obj);
+            }
+            return departments;
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
+    }
+
     private Department instantiateDepartment(ResultSet rs) throws SQLException {
         Department dep = new Department();
         dep.setId(rs.getInt("id"));
@@ -87,6 +112,10 @@ public class DepartmentDaoJDBC implements DepartmentDao {
 
     @Override
     public List<Department> findAll() {
-        return null;
+        try (PreparedStatement st = conn.prepareStatement("SELECT * FROM department ORDER BY name")) {
+            return executeQueryAndProcessMultiple(st);
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 }
