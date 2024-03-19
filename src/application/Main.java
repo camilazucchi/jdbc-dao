@@ -8,12 +8,14 @@ import org.w3c.dom.stylesheets.LinkStyle;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Scanner;
 import java.util.logging.Logger;
 
 public class Main {
     public static void main(String[] args) {
 
         SellerDao sellerDao = DaoFactory.createSellerDao();
+        Scanner sc = new Scanner(System.in);
 
         System.out.println("---- TEST #1: seller findById method ----");
         Seller seller = sellerDao.findById(3);
@@ -43,6 +45,15 @@ public class Main {
         seller.setName("Martha Wayne");
         sellerDao.update(seller);
         System.out.println("Updated completed!");
+
+        System.out.println();
+        System.out.println("---- TEST #6: seller delete method ----");
+        System.out.println("Enter ID for delete test: ");
+        int id = sc.nextInt();
+        sellerDao.deleteById(id);
+        System.out.println("Delete completed!");
+
+        sc.close();
 
     }
 }
