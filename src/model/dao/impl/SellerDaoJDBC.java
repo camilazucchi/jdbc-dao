@@ -69,7 +69,7 @@ public class SellerDaoJDBC implements SellerDao {
     @Override
     public void update(Seller obj) {
         try (PreparedStatement st = conn.prepareStatement("UPDATE seller " +
-                "SET name = ?, email = ?, bithdate = ?, basesalary = ?, departmentid = ? " +
+                "SET name = ?, email = ?, birthdate = ?, basesalary = ?, departmentid = ? " +
                 "WHERE id = ?")) {
             st.setString(1, obj.getName());
             st.setString(2, obj.getEmail());
@@ -86,6 +86,20 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void deleteById(Integer id) {
+        try (PreparedStatement st = conn.prepareStatement("DELETE FROM seller " +
+                "WHERE id = ?")) {
+            // O valor será o ID que foi informado como parâmetro "(Integer id)":
+            st.setInt(1, id);
+            int rowsAffected = st.executeUpdate();
+
+            // Verifica se algum registro foi afetado pela exclusão:
+            if (rowsAffected == 0) {
+                // Lança uma exceção informando que o vendedor com o ID fornecido não foi encontrado:
+                throw new DbException("Seller with ID " + id + " not found");
+            }
+        } catch (SQLException e) {
+            throw new DbException(e.getMessage());
+        }
     }
 
     // Este método busca um vendedor (Seller) pelo seu ID no banco de dados:
